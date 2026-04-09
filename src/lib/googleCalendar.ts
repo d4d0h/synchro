@@ -56,6 +56,29 @@ export async function savePrivateNote(
 ): Promise<void> {
     const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(googleEventId)}`;
 
+    // 1. Fetch the existing event to get its current description
+    const getRes = await fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    if (!getRes.ok) throw new Error('Failed to fetch event to update note');
+    
+    const event = await getRes.json();
+    const currentDesc = event.description || '';
+    
+    // 2. Safely replace or append the Synchro Note section
+    const separator = '\n\n-------------------------------\n\n';
+    let newDesc = currentDesc;
+    
+    if (currentDesc.includes('-------------------------------')) {
+        // Strip out the old notes section and replace it
+        newDesc = currentDesc.split('-------------------------------')[0].trimEnd();
+        if (note) newDesc += separator + note;
+    } else if (note) {
+        // Append new notes section
+        newDesc += separator + note;
+    }
+
+    // 3. Patch the new description and extendedProperties
     const res = await fetch(url, {
         method: 'PATCH',
         headers: {
@@ -63,6 +86,7 @@ export async function savePrivateNote(
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+            description: newDesc,
             extendedProperties: {
                 private: {
                     synchro_note: note,
@@ -76,3 +100,80 @@ export async function savePrivateNote(
         throw new Error(`Failed to save note: ${res.status}: ${err}`);
     }
 }
+
+/**
+ * Create a new event in the user's primary Google Calendar.
+ * Includes a private note using extendedProperties.private.
+ */
+export async function createGoogleCalendarEvent(
+    accessToken: string,
+    event: CalendarEvent,
+    note?: string
+): Promise<string> {
+    // 1. PRE-FLIGHT CHECK: Avoid duplicating events that already exist on the user's calendar
+    // (e.g. via automatic Gmail parsing or native Luma calendar subscription)
+    const searchUrl = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
+    searchUrl.searchParams.set('q', event.title);
+    
+    // Bound the search +/- 24 hours to be safe but prevent cross-year false positives
+    const min = new Date(event.start);
+    min.setHours(min.getHours() - 24);
+    const max = new Date(event.start);
+    max.setHours(max.getHours() + 24);
+    
+    searchUrl.searchParams.set('timeMin', min.toISOString());
+    searchUrl.searchParams.set('timeMax', max.toISOString());
+    searchUrl.searchParams.set('singleEvents', 'true');
+
+    try {
+        const searchRes = await fetch(searchUrl.toString(), {
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        if (searchRes.ok) {
+            const searchData = await searchRes.json();
+            // Look for an exact title match within the time window
+            const existing = searchData.items?.find((i: any) => i.summary === event.title);
+            if (existing) {
+                // Event already exists! Just append the private note to it instead of duplicating.
+                if (note) {
+                    await savePrivateNote(accessToken, existing.id, note);
+                }
+                return existing.id;
+            }
+        }
+    } catch (e) {
+        console.warn('Pre-flight duplication check failed, proceeding to create...', e);
+    }
+
+    // 2. Event does not exist, create a fresh copy
+    const url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            summary: event.title,
+            start: { dateTime: new Date(event.start).toISOString() },
+            end: { dateTime: new Date(event.end).toISOString() },
+            location: event.location,
+            description: note ? `${event.description || ''}\n\n-------------------------------\n\n${note}` : event.description,
+            extendedProperties: {
+                private: {
+                    synchro_note: note || '',
+                },
+            },
+        }),
+    });
+
+    if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`Failed to create Google Calendar event: ${res.status}: ${err}`);
+    }
+
+    const data = await res.json();
+    return data.id;
+}
+

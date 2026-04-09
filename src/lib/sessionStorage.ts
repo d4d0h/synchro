@@ -1,11 +1,25 @@
 import { CalendarEvent } from './calendar';
 
+export type ProposalStatus = 'none' | 'proposed' | 'accepted' | 'rejected_by_me' | 'rejected_by_peer' | 'cancelled';
+
+export interface ProposalState {
+    status: ProposalStatus;
+    proposedBy: 'me' | 'peer';          // relative to the user who saved the session
+    proposerName?: string;              // display name of who proposed
+    googleEventId?: string;            // set after export, used for cancellation PATCH
+    cancelledByName?: string;          // for display: "Canceled meeting w/ X"
+    pendingCalendarAdd?: boolean;      // accepted offline — calendar not yet created
+}
+
 export interface SavedSession {
     id: string; // the sessionId or a new UID if it's not available
     role: string;
     date: string; // ISO string
     matches: CalendarEvent[];
-    notes: Record<string, string>; // the decrypted peer notes keyed by event UID
+    notes: Record<string, string>; // kept for backward compat, no longer written
+    privateNotes?: Record<string, string>; // personal private notes keyed by event UID
+    proposals?: Record<string, ProposalState>; // meeting proposal state per event UID
+    label?: string; // Optional user-defined label for the session
 }
 
 const STORAGE_KEY = 'synchro_saved_sessions';

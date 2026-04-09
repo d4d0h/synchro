@@ -23,6 +23,10 @@ export function parseICS(icsContent: string): CalendarEvent[] {
         return vevents
             .map((vevent) => {
                 const event = new ICAL.Event(vevent);
+                const rawUrl: string | undefined = vevent.getFirstPropertyValue('url');
+                const pkMatch = event.description?.match(/https?:\/\/(?:lu\.ma|luma\.com)\/[^\s\\]+\?pk=[A-Za-z0-9\-_]+/i);
+                const descUrl = pkMatch ? pkMatch[0] : undefined;
+
                 return {
                     uid: event.uid,
                     title: event.summary,
@@ -30,14 +34,26 @@ export function parseICS(icsContent: string): CalendarEvent[] {
                     end: event.endDate.toString(),
                     description: event.description,
                     location: event.location,
-                    // @ts-ignore - ical.js types might be incomplete
-                    url: vevent.getFirstPropertyValue('url'),
+                    url: rawUrl || descUrl,
                 };
             })
             .filter((event) => {
                 // Only include upcoming events (events that haven't ended yet)
                 const eventEnd = new Date(event.end);
-                return eventEnd > now;
+                if (eventEnd <= now) return false;
+
+                // Filter out clearly virtual/online-only events.
+                // Only exclude if the location IS a raw URL (Zoom/Meet link)
+                // or starts with an explicit virtual keyword.
+                // We do NOT exclude events with no location — the organizer may not have filled it in.
+                const loc = (event.location || '').trim();
+                if (loc) {
+                    const isRawUrl = /^https?:\/\//i.test(loc);
+                    const startsWithVirtualKeyword = /^(online|virtual|zoom meeting|google meet|microsoft teams|webinar)\b/i.test(loc);
+                    if (isRawUrl || startsWithVirtualKeyword) return false;
+                }
+
+                return true;
             });
     } catch (e) {
         console.error("Failed to parse ICS", e);

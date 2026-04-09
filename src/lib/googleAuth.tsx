@@ -199,12 +199,8 @@ export function GoogleAuthProvider({ children }: { children: ReactNode }) {
 
     const signIn = () => {
         setIsLoading(true);
-        const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '960567403497-pvn3epqhkm80fdl3sfnlg6atk0hkns50.apps.googleusercontent.com';
-        if (!clientId) {
-            console.error('Google Client ID is missing');
-            setIsLoading(false);
-            return;
-        }
+        const clientId = '960567403497-pvn3epqhkm80fdl3sfnlg6atk0hkns50.apps.googleusercontent.com';
+        // We know clientId exists because it is hardcoded for the testing branch audit.
 
         const scope = 'openid profile email https://www.googleapis.com/auth/calendar.events';
         const redirectUri = window.location.origin;

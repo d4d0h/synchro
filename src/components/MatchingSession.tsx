@@ -199,17 +199,16 @@ export function MatchingSession({ events, accessToken, userName, viewMode = 'IDL
     const [joinerDoubleBlindedA, setJoinerDoubleBlindedA] = useState<string[]>([]);
 
     const handleMessages = useCallback(async (messages: Message[]) => {
-        console.log('[handleMessages] Called with', messages.length, 'messages');
-        console.log('[handleMessages] Current state:', state, 'role:', role);
+
 
         const myId = role;
         if (!myId) {
-            console.log('[handleMessages] No role set, returning');
+            // No role set, returning
             return;
         }
 
         const relevant = messages.filter(m => m.sender !== myId);
-        console.log('[handleMessages] Relevant messages:', relevant.length);
+
         if (relevant.length === 0) return;
 
         // Process all new messages? Or just the last one?
@@ -222,10 +221,10 @@ export function MatchingSession({ events, accessToken, userName, viewMode = 'IDL
         // For notes, we need to scan all.
 
         const lastMsg = relevant[relevant.length - 1];
-        console.log('[handleMessages] Processing message type:', lastMsg.type);
+
 
         if (state === 'CREATED' && lastMsg.type === 'JOIN') {
-            console.log('[handleMessages] INITIATOR: Peer joined, starting PSI');
+
             setState('EXCHANGING');
 
             // Extract peer's display name
@@ -244,7 +243,7 @@ export function MatchingSession({ events, accessToken, userName, viewMode = 'IDL
                 addLog('Encryption channel established.');
             }
 
-            console.log('[handleMessages] About to call startPsiStep1, function exists:', typeof startPsiStep1);
+
             await startPsiStep1();
         }
 
@@ -399,7 +398,7 @@ export function MatchingSession({ events, accessToken, userName, viewMode = 'IDL
 
     const sendMessage = async (type: string, payload: any, sid?: string) => {
         const targetSessionId = sid || sessionId;
-        console.log('[sendMessage] Sending', type, 'to session', targetSessionId);
+
         try {
             const res = await fetch('/api/signal', {
                 method: 'POST',
@@ -416,7 +415,7 @@ export function MatchingSession({ events, accessToken, userName, viewMode = 'IDL
                 const errorData = await res.json().catch(() => ({}));
                 console.error('[sendMessage] Error data:', errorData);
             } else {
-                console.log('[sendMessage] Success:', type);
+
             }
         } catch (error) {
             console.error('[sendMessage] Exception:', error);

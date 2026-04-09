@@ -288,7 +288,7 @@ export default function Home() {
 
                 // 2. Fallback to Google Calendar Sync if we have an access token but no local URL
                 if (!lumaUrl && accessToken) {
-                    console.log('No local URL found, checking Google Calendar sync...');
+
                     const syncedUrl = await fetchGoogleConfig(accessToken);
                     if (syncedUrl) {
                         lumaUrl = syncedUrl;

@@ -788,7 +788,6 @@ export function MatchingSession({ events, accessToken, userName, viewMode = 'IDL
                         )}
                     </div>
 
-                    
                     <div className="flex items-center justify-between mt-8 mb-4">
                         <div className="text-sm font-bold text-zinc-400 uppercase tracking-widest">{matches.length} Matches Found</div>
                     </div>
@@ -796,10 +795,7 @@ export function MatchingSession({ events, accessToken, userName, viewMode = 'IDL
                         {displayMode === 'list' ? matches.map(event => (
                             <div
                                 key={event.uid}
-                                onClick={() => event.url && window.open(event.url, '_blank', 'noopener,noreferrer')}
                                 className={`group relative p-4 rounded-xl border flex flex-col gap-4 transition-all duration-200 ${
-                                    event.url ? 'cursor-pointer' : 'cursor-default'
-                                } ${
                                     proposals[event.uid]?.status === 'accepted'
                                         ? 'bg-emerald-950/30 border-emerald-700/40 hover:border-emerald-600/60 hover:shadow-[0_0_24px_2px_rgba(16,185,129,0.12)]'
                                         : proposals[event.uid]?.status === 'cancelled'
@@ -822,7 +818,19 @@ export function MatchingSession({ events, accessToken, userName, viewMode = 'IDL
                                                 <ExternalLink className="w-3 h-3 text-zinc-600 group-hover:text-violet-400 transition-colors ml-1" />
                                             )}
                                         </div>
-                                        <h4 className="font-bold text-lg text-white leading-snug group-hover:text-violet-100 transition-colors">{event.title}</h4>
+                                        {event.url ? (
+                                            <a
+                                                href={event.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                onClick={e => e.stopPropagation()}
+                                                className="font-bold text-lg text-white truncate block hover:text-violet-300 transition-colors cursor-pointer"
+                                            >
+                                                {event.title}
+                                            </a>
+                                        ) : (
+                                            <p className="font-bold text-lg text-white truncate block">{event.title}</p>
+                                        )}
                                         {event.location && (
                                             <p className="text-xs text-zinc-500 mt-1 flex items-center gap-1.5 group-hover:text-zinc-400 transition-colors">
                                                 <MapPin className="w-3.5 h-3.5 shrink-0" />
@@ -907,15 +915,17 @@ export function MatchingSession({ events, accessToken, userName, viewMode = 'IDL
                                     </button>
                                 )}
 
-                                {/* 4-button Action Bar — always visible, contextually disabled */}
-                                {viewMode !== 'HISTORY' && (() => {
+                                {/* 4-button Action Bar — always rendered, only Propose/Accept/Reject hidden in History since they need a live session */}
+                                {(() => {
                                     const p = proposals[event.uid];
                                     const status: ProposalStatus = p?.status ?? 'none';
                                     const isMeProposer = p?.proposedBy === 'me';
+                                    const isHistory = viewMode === 'HISTORY';
                                     // Allow re-proposing after any rejection — peer said no, you can try a different time
-                                    const canPropose = status === 'none' || status === 'rejected_by_me' || status === 'rejected_by_peer' || status === 'cancelled';
-                                    const canAccept = status === 'proposed' && !isMeProposer;
-                                    const canReject = status === 'proposed' && !isMeProposer;
+                                    const canPropose = !isHistory && (status === 'none' || status === 'rejected_by_me' || status === 'rejected_by_peer' || status === 'cancelled');
+                                    const canAccept = !isHistory && status === 'proposed' && !isMeProposer;
+                                    const canReject = !isHistory && status === 'proposed' && !isMeProposer;
+                                    // Cancel is always available for accepted events, even in History
                                     const canCancel = (status === 'proposed' && isMeProposer) || status === 'accepted';
                                     return (
                                         <div className="flex items-center gap-2 pt-2 border-t border-zinc-700/40" onClick={e => e.stopPropagation()}>
@@ -955,9 +965,9 @@ export function MatchingSession({ events, accessToken, userName, viewMode = 'IDL
                                     );
                                 })()}
 
-                                {/* Google Calendar Private Notes Section */}
+                                {/* Google Calendar Private Notes Section — stopPropagation prevents clicking notes from opening Luma */}
                                 {(activePrivateNoteId === event.uid || privateNotes[event.uid]) && (
-                                    <div className="pt-3 border-t border-zinc-700/50">
+                                    <div className="mt-4 pt-4 border-t border-zinc-700/50" onClick={e => e.stopPropagation()}>
                                         {privateNotes[event.uid] && activePrivateNoteId !== event.uid && (
                                             <div className="mb-3 p-3 bg-amber-500/10 rounded-lg border border-amber-500/30 text-sm">
                                                 <span className="text-xs text-amber-500/70 flex items-center gap-1 mb-1">

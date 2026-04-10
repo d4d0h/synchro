@@ -93,9 +93,7 @@ function EventsList({ events, accessToken, onRefresh, isRefreshing }: { events: 
                 {events.map(event => (
                     <div
                         key={event.uid}
-                        onClick={() => event.url && window.open(event.url, '_blank', 'noopener,noreferrer')}
-                        className={`group py-4 px-4 rounded-xl border border-transparent transition-all duration-200 ${event.url ? 'cursor-pointer' : ''
-                            } hover:border-violet-500/50 hover:bg-violet-950/20 hover:shadow-[0_0_28px_4px_rgba(139,92,246,0.12)]`}
+                        className={`group py-4 px-4 rounded-xl border border-transparent transition-all duration-200 hover:border-violet-500/50 hover:bg-violet-950/20 hover:shadow-[0_0_28px_4px_rgba(139,92,246,0.12)]`}
                     >
                         <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
@@ -111,7 +109,19 @@ function EventsList({ events, accessToken, onRefresh, isRefreshing }: { events: 
                                         <ExternalLink className="w-3 h-3 text-zinc-600 group-hover:text-violet-400 transition-colors ml-1" />
                                     )}
                                 </div>
-                                <p className="font-bold text-lg text-white truncate block group-hover:text-violet-100 transition-colors">{event.title}</p>
+                                {event.url ? (
+                                    <a
+                                        href={event.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={e => e.stopPropagation()}
+                                        className="font-bold text-lg text-white truncate block hover:text-violet-300 transition-colors"
+                                    >
+                                        {event.title}
+                                    </a>
+                                ) : (
+                                    <p className="font-bold text-lg text-white truncate block">{event.title}</p>
+                                )}
                                 {event.location && (
                                     <p className="text-xs text-zinc-500 mt-1 flex items-center gap-1.5 break-words line-clamp-2 group-hover:text-zinc-400 transition-colors">
                                         <MapPin className="w-3.5 h-3.5 shrink-0" />
@@ -146,9 +156,9 @@ function EventsList({ events, accessToken, onRefresh, isRefreshing }: { events: 
                             </div>
                         </div>
 
-                        {/* Google Calendar Private Notes Section */}
+                        {/* Private Notes — stopPropagation prevents clicking input from triggering Luma link */}
                         {(activePrivateNoteId === event.uid || privateNotes[event.uid]) && (
-                            <div className="mt-4 pt-4 border-t border-zinc-700/50">
+                            <div className="mt-4 pt-4 border-t border-zinc-700/50" onClick={e => e.stopPropagation()}>
                                 {privateNotes[event.uid] && activePrivateNoteId !== event.uid && (
                                     <div className="mb-2 p-3 bg-amber-500/10 rounded-lg border border-amber-500/30 text-sm">
                                         <div className="flex items-center gap-1 mb-1 text-xs text-amber-500/70">

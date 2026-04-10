@@ -351,7 +351,7 @@ export default function Home() {
                             style={{
                                 width: '471px',
                                 height: '57px',
-                                transform: 'scale(0.27)',
+                                transform: 'scale(0.25)',
                                 transformOrigin: 'top left',
                                 maskImage: 'url(/logo_transparent.png)',
                                 WebkitMaskImage: 'url(/logo_transparent.png)',
@@ -383,7 +383,7 @@ export default function Home() {
             <div className={`w-full max-w-5xl flex flex-col items-center gap-12 z-0`}>
                 {!isLoggedIn ? (
                     <div className="text-center space-y-6 -mt-8 sm:-mt-12">
-                        <div className="relative inline-block mb-10">
+                        <div className="relative inline-block mb-4">
                             <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full scale-[1.5] z-0" />
                             <img
                                 src="/logo_transparent.png"
@@ -399,7 +399,7 @@ export default function Home() {
                             </h1>
                         </div>
 
-                        <div className="pt-8"> {/* Breathing space before cards section */}
+                        <div className="pt-4"> {/* Breathing space before cards section */}
                             <p className="text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto mb-6 font-light tracking-widest italic opacity-70 animate-in fade-in duration-1000 delay-300">
                                 Discover overlapping events with peers without exposing your personal data
                             </p>

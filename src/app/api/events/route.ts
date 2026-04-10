@@ -99,7 +99,6 @@ export async function GET(req: Request) {
               const signedInEmail = email.toLowerCase();
               if (guestEmail === signedInEmail) {
                 ownershipVerified = true;
-                console.log(`Synchro Security: Ownership verified for ${email} via ticket page.`);
               } else {
                 // Found a different email — this ICS belongs to someone else
                 ownershipRejected = true;

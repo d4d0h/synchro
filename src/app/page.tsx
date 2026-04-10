@@ -343,15 +343,17 @@ export default function Home() {
     return (
         <main className="flex min-h-screen flex-col items-center px-8 pt-0 pb-0 relative overflow-hidden bg-background text-foreground">
             {/* Header */}
-            <div className="z-10 w-full flex items-center justify-between font-mono text-sm mb-0 py-4 px-4 sm:px-8">
-                <div className="flex flex-col items-center justify-center relative group">
-                    <img 
-                        src="/branding_text.png" 
-                        alt="Synchro" 
-                        className="w-32 opacity-90 group-hover:opacity-100 transition-opacity mt-2 object-contain relative z-10" 
-                    />
-                    {/* The magical multiply gradient overlay turns the white text into the gradient color while keeping black background pure black */}
-                    <div className="absolute inset-0 mt-2 z-20 bg-gradient-to-r from-purple-300 via-primary to-accent mix-blend-multiply opacity-90 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            <div className="z-10 w-full flex items-center justify-between font-mono text-sm mb-0 py-4 px-4 sm:px-8 h-[72px]">
+                <div className="w-32 relative h-full flex items-center">
+                    <div className="absolute top-1/2 -translate-y-1/2 left-0 w-32 flex flex-col items-center justify-center group">
+                        <img 
+                            src="/branding_text.png" 
+                            alt="Synchro" 
+                            className="w-32 opacity-90 group-hover:opacity-100 transition-opacity object-contain relative z-10" 
+                        />
+                        {/* The magical multiply gradient overlay turns the white text into the gradient color while keeping black background pure black */}
+                        <div className="absolute inset-0 z-20 bg-gradient-to-r from-purple-300 via-primary to-accent mix-blend-multiply opacity-90 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    </div>
                 </div>
 
                 <div className="flex items-center justify-end">
@@ -370,7 +372,7 @@ export default function Home() {
             {/* Main Content */}
             <div className={`w-full max-w-5xl flex flex-col items-center gap-6 z-0`}>
                 {!isLoggedIn ? (
-                    <div className="text-center space-y-6 -mt-8 sm:-mt-12">
+                    <div className="text-center space-y-6 -mt-16 sm:-mt-24">
                         <div className="relative inline-block mb-0">
                             <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full scale-[1.5] z-0" />
                             <img

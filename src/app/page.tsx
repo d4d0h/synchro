@@ -345,13 +345,13 @@ export default function Home() {
             {/* Header */}
             <div className="z-10 w-full flex items-center justify-between font-mono text-sm mb-0 py-4 px-4 sm:px-8">
                 <div className="flex items-center">
-                    <div className="relative h-5 w-[170px] overflow-hidden opacity-90 hover:opacity-100 transition-opacity mt-2">
+                    <div className="relative h-6 w-[170px] overflow-hidden opacity-90 hover:opacity-100 transition-opacity mt-2">
                         <div
                             className="absolute bg-gradient-to-r from-[#c084fc] to-[#3b82f6]"
                             style={{
                                 width: '471px',
                                 height: '57px',
-                                transform: 'scale(0.3)',
+                                transform: 'scale(0.27)',
                                 transformOrigin: 'top left',
                                 maskImage: 'url(/logo_transparent.png)',
                                 WebkitMaskImage: 'url(/logo_transparent.png)',
@@ -382,7 +382,7 @@ export default function Home() {
             {/* Main Content */}
             <div className={`w-full max-w-5xl flex flex-col items-center gap-12 z-0`}>
                 {!isLoggedIn ? (
-                    <div className="text-center space-y-6 -mt-24 sm:-mt-32">
+                    <div className="text-center space-y-6 -mt-8 sm:-mt-12">
                         <div className="relative inline-block mb-10">
                             <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full scale-[1.5] z-0" />
                             <img

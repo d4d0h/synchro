@@ -344,11 +344,12 @@ export default function Home() {
         <main className="flex min-h-screen flex-col items-center px-8 pt-0 pb-0 relative overflow-hidden bg-background text-foreground">
             {/* Header */}
             <div className="z-10 w-full flex items-center justify-between font-mono text-sm mb-0 py-4 px-4 sm:px-8">
-                <div className="flex flex-col items-center justify-center">
+                <div className="flex flex-col items-center justify-center relative w-32 h-10">
                     <img 
                         src="/branding_text.png" 
                         alt="Synchro" 
-                        className="w-32 opacity-90 hover:opacity-100 transition-opacity mt-2 object-contain" 
+                        className="w-32 opacity-90 hover:opacity-100 transition-opacity absolute top-0 left-0" 
+                        style={{ pointerEvents: 'none' }}
                     />
                 </div>
 
@@ -368,7 +369,7 @@ export default function Home() {
             {/* Main Content */}
             <div className={`w-full max-w-5xl flex flex-col items-center gap-6 z-0`}>
                 {!isLoggedIn ? (
-                    <div className="text-center space-y-6 -mt-16 sm:-mt-24">
+                    <div className="text-center space-y-6 mt-[-80px] sm:mt-[-140px] pt-4">
                         <div className="relative inline-block mb-0">
                             <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full scale-[1.5] z-0" />
                             <img

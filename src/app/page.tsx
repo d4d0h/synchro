@@ -345,13 +345,13 @@ export default function Home() {
             {/* Header */}
             <div className="z-10 w-full flex items-center justify-between font-mono text-sm mb-0 py-4 px-4 sm:px-8">
                 <div className="flex items-center">
-                    <div className="relative h-4 w-[120px] overflow-hidden opacity-80 hover:opacity-100 transition-opacity">
+                    <div className="relative h-5 w-[140px] overflow-hidden opacity-90 hover:opacity-100 transition-opacity mt-2">
                         <div
                             className="absolute bg-gradient-to-r from-[#c084fc] to-[#3b82f6]"
                             style={{
                                 width: '471px',
                                 height: '57px',
-                                transform: 'scale(0.25)',
+                                transform: 'scale(0.3)',
                                 transformOrigin: 'top left',
                                 maskImage: 'url(/logo_transparent.png)',
                                 WebkitMaskImage: 'url(/logo_transparent.png)',
@@ -382,8 +382,8 @@ export default function Home() {
             {/* Main Content */}
             <div className={`w-full max-w-5xl flex flex-col items-center gap-12 z-0`}>
                 {!isLoggedIn ? (
-                    <div className="text-center space-y-6 -mt-16 sm:-mt-24">
-                        <div className="relative inline-block mb-10">
+                    <div className="text-center space-y-6 -mt-10 sm:-mt-16">
+                        <div className="relative inline-block mb-12">
                             <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full scale-[1.5] z-0" />
                             <img
                                 src="/logo_transparent.png"
@@ -391,9 +391,9 @@ export default function Home() {
                                 className="relative w-40 h-40 mx-auto animate-in zoom-in-95 duration-700 z-10 opacity-90"
                             />
                         </div>
-                        <h1 className="text-6xl sm:text-7xl font-bold tracking-tighter leading-tight animate-in fade-in slide-in-from-top-12 duration-1000">
-                            <span className="text-white block mb-6">Sync Calendars</span>
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-primary to-accent drop-shadow-[0_0_30px_rgba(139,92,246,0.2)]">Keep Privacy.</span>
+                        <h1 className="text-6xl sm:text-7xl font-bold tracking-tighter leading-[1.1] animate-in fade-in slide-in-from-top-12 duration-1000">
+                            <span className="text-white">Sync Calendars</span><br />
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-primary to-accent drop-shadow-[0_0_30px_rgba(139,92,246,0.2)]">Keep Privacy</span>
                         </h1>
                         <p className="text-lg sm:text-xl text-zinc-400 max-w-2xl mx-auto pt-4 font-light tracking-widest italic opacity-70 animate-in fade-in duration-1000 delay-300">
                             Discover overlapping events with peers without exposing your personal data
@@ -401,8 +401,8 @@ export default function Home() {
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl mx-auto mt-20 text-center animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-500">
                             {/* Sync Card */}
-                            <div className="group p-8 rounded-3xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md transition-all duration-500 hover:border-primary/50 hover:bg-zinc-900/70 hover:shadow-[0_0_50px_-12px_rgba(139,92,246,0.3)] hover:-translate-y-2 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                            <div className="group p-8 rounded-3xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md transition-all duration-500 hover:border-primary/50 hover:bg-zinc-900/70 hover:shadow-[0_0_50px_-12px_rgba(139,92,246,0.25)] hover:-translate-y-2 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 via-primary/10 to-accent/10 rounded-full blur-3xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                                 <strong className="text-white text-3xl block mb-4 font-bold tracking-tight group-hover:text-primary transition-colors">Sync</strong>
                                 <p className="text-zinc-400 leading-relaxed font-light text-base">
                                     Link your Luma securely with zero-database sync to automatically fetch your confirmed events.
@@ -410,8 +410,8 @@ export default function Home() {
                             </div>
 
                             {/* Match Card */}
-                            <div className="group p-8 rounded-3xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md transition-all duration-500 hover:border-accent/50 hover:bg-zinc-900/70 hover:shadow-[0_0_50px_-12px_rgba(236,72,153,0.3)] hover:-translate-y-2 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-3xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                            <div className="group p-8 rounded-3xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md transition-all duration-500 hover:border-accent/50 hover:bg-zinc-900/70 hover:shadow-[0_0_50px_-12px_rgba(236,72,153,0.25)] hover:-translate-y-2 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 via-primary/10 to-accent/10 rounded-full blur-3xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                                 <strong className="text-white text-3xl block mb-4 font-bold tracking-tight group-hover:text-accent transition-colors">Match</strong>
                                 <p className="text-zinc-400 leading-relaxed font-light text-base">
                                     Identify shared events with true blind matching that reveals nothing but your mutual plans.
@@ -419,8 +419,8 @@ export default function Home() {
                             </div>
 
                             {/* Meet Card */}
-                            <div className="group p-8 rounded-3xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md transition-all duration-500 hover:border-blue-500/50 hover:bg-zinc-900/70 hover:shadow-[0_0_50px_-12px_rgba(59,130,246,0.3)] hover:-translate-y-2 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                            <div className="group p-8 rounded-3xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md transition-all duration-500 hover:border-blue-500/50 hover:bg-zinc-900/70 hover:shadow-[0_0_50px_-12px_rgba(59,130,246,0.25)] hover:-translate-y-2 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 via-primary/10 to-accent/10 rounded-full blur-3xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                                 <strong className="text-white text-3xl block mb-4 font-bold tracking-tight group-hover:text-blue-400 transition-colors">Meet</strong>
                                 <p className="text-zinc-400 leading-relaxed font-light text-base">
                                     Schedule meetings in one click, create private notes, and export to your calendar.

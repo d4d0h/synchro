@@ -116,7 +116,17 @@ export async function GET(req: Request) {
           // Pending invites have approval_status="invited" with event_tickets=[].
           const hasTicket = /"event_tickets":\[\{/.test(html);
 
-          if (status === 'approved' && hasTicket) {
+          // Hosts and organizers get a management view — they don't have a standard guest
+          // ticket entry, but their page contains host-specific signals.
+          const isHost = /"is_host":\s*true/i.test(html) ||
+                         /"role":\s*"host"/i.test(html) ||
+                         /"role":\s*"organizer"/i.test(html) ||
+                         /"host_status"/i.test(html);
+
+          // Accept the event if:
+          // 1. Approved guest with a ticket, OR
+          // 2. Identified as a host/organizer (treat hosting as attending for IRL events)
+          if ((status === 'approved' && hasTicket) || isHost) {
             return event;
           }
           

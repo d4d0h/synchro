@@ -382,13 +382,13 @@ export default function Home() {
             {/* Main Content */}
             <div className={`w-full max-w-5xl flex flex-col items-center gap-12 z-0`}>
                 {!isLoggedIn ? (
-                    <div className="text-center space-y-6 -mt-10 sm:-mt-16">
-                        <div className="relative inline-block mb-12">
+                    <div className="text-center space-y-6 -mt-16 sm:-mt-20">
+                        <div className="relative inline-block mb-10">
                             <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full scale-[1.5] z-0" />
                             <img
                                 src="/logo_transparent.png"
                                 alt="Synchro Logo"
-                                className="relative w-40 h-40 mx-auto animate-in zoom-in-95 duration-700 z-10 opacity-90"
+                                className="relative w-64 h-64 mx-auto animate-in zoom-in-95 duration-700 z-10 opacity-90"
                             />
                         </div>
                         <h1 className="text-6xl sm:text-7xl font-bold tracking-tighter leading-[1.1] animate-in fade-in slide-in-from-top-12 duration-1000">
@@ -401,30 +401,39 @@ export default function Home() {
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl mx-auto mt-20 text-center animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-500">
                             {/* Sync Card */}
-                            <div className="group p-8 rounded-3xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md transition-all duration-500 hover:border-primary/50 hover:bg-zinc-900/70 hover:shadow-[0_0_50px_-12px_rgba(139,92,246,0.25)] hover:-translate-y-2 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 via-primary/10 to-accent/10 rounded-full blur-3xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                                <strong className="text-white text-3xl block mb-4 font-bold tracking-tight group-hover:text-primary transition-colors">Sync</strong>
-                                <p className="text-zinc-400 leading-relaxed font-light text-base">
-                                    Link your Luma securely with zero-database sync to automatically fetch your confirmed events.
-                                </p>
+                            <div className="relative group transition-all duration-500 hover:-translate-y-2">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/40 via-primary/40 to-accent/40 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition duration-700 -z-10" />
+                                <div className="p-8 h-full rounded-3xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md transition-colors duration-500 hover:bg-zinc-900/70 hover:border-zinc-700/50 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 via-primary/10 to-accent/10 rounded-full blur-3xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                    <strong className="text-white text-3xl block mb-4 font-bold tracking-tight bg-clip-text group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-300 group-hover:to-primary transition-all duration-500">Sync</strong>
+                                    <p className="text-zinc-400 leading-relaxed font-light text-base">
+                                        Link your Luma securely with zero-database sync to automatically fetch your confirmed events.
+                                    </p>
+                                </div>
                             </div>
 
                             {/* Match Card */}
-                            <div className="group p-8 rounded-3xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md transition-all duration-500 hover:border-accent/50 hover:bg-zinc-900/70 hover:shadow-[0_0_50px_-12px_rgba(236,72,153,0.25)] hover:-translate-y-2 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 via-primary/10 to-accent/10 rounded-full blur-3xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                                <strong className="text-white text-3xl block mb-4 font-bold tracking-tight group-hover:text-accent transition-colors">Match</strong>
-                                <p className="text-zinc-400 leading-relaxed font-light text-base">
-                                    Identify shared events with true blind matching that reveals nothing but your mutual plans.
-                                </p>
+                            <div className="relative group transition-all duration-500 hover:-translate-y-2 delay-100">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/40 via-primary/40 to-accent/40 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition duration-700 -z-10" />
+                                <div className="p-8 h-full rounded-3xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md transition-colors duration-500 hover:bg-zinc-900/70 hover:border-zinc-700/50 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 via-primary/10 to-accent/10 rounded-full blur-3xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                    <strong className="text-white text-3xl block mb-4 font-bold tracking-tight bg-clip-text group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-primary group-hover:to-accent transition-all duration-500">Match</strong>
+                                    <p className="text-zinc-400 leading-relaxed font-light text-base">
+                                        Identify shared events with true blind matching that reveals nothing but your mutual plans.
+                                    </p>
+                                </div>
                             </div>
 
                             {/* Meet Card */}
-                            <div className="group p-8 rounded-3xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md transition-all duration-500 hover:border-blue-500/50 hover:bg-zinc-900/70 hover:shadow-[0_0_50px_-12px_rgba(59,130,246,0.25)] hover:-translate-y-2 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 via-primary/10 to-accent/10 rounded-full blur-3xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                                <strong className="text-white text-3xl block mb-4 font-bold tracking-tight group-hover:text-blue-400 transition-colors">Meet</strong>
-                                <p className="text-zinc-400 leading-relaxed font-light text-base">
-                                    Schedule meetings in one click, create private notes, and export to your calendar.
-                                </p>
+                            <div className="relative group transition-all duration-500 hover:-translate-y-2 delay-200">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/40 via-primary/40 to-accent/40 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition duration-700 -z-10" />
+                                <div className="p-8 h-full rounded-3xl bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md transition-colors duration-500 hover:bg-zinc-900/70 hover:border-zinc-700/50 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/10 via-primary/10 to-accent/10 rounded-full blur-3xl -mr-12 -mt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                    <strong className="text-white text-3xl block mb-4 font-bold tracking-tight bg-clip-text group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-300 group-hover:via-primary group-hover:to-accent transition-all duration-500">Meet</strong>
+                                    <p className="text-zinc-400 leading-relaxed font-light text-base">
+                                        Schedule meetings in one click, create private notes, and export to your calendar.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 

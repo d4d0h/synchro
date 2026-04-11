@@ -126,7 +126,16 @@ export async function GET(req: Request) {
     const noTicketResults = await Promise.all(
       noTicketEvents.map(async (event) => {
         const pageUrl = event.url;
-        if (!pageUrl) return null;
+        if (!pageUrl) {
+          // No URL to verify against — if we've already confirmed this ICS belongs to the
+          // signed-in user via another event, trust it and include this one too.
+          if (ownershipVerified) {
+            console.log(`[Synchro no-pk] "${event.title}" no URL but ownership verified — including`);
+            return event;
+          }
+          console.log(`[Synchro no-pk] "${event.title}" no URL and ownership not verified — skipping`);
+          return null;
+        }
 
         const html = await fetchPage(pageUrl);
         if (!html) {

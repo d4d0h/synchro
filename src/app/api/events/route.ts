@@ -45,6 +45,7 @@ export async function GET(req: Request) {
 
     const icsText = await res.text();
     const rawEvents = parseICS(icsText);
+    console.log(`[Synchro ICS] ${rawEvents.length} upcoming IRL events parsed: ${rawEvents.map(e => `"${e.title}"`).join(', ')}`);
 
     let ownershipVerified = !email;
     let ownershipRejected = false;

@@ -363,14 +363,12 @@ export default function Home() {
         <main className="flex min-h-screen flex-col items-center px-8 pt-0 pb-0 relative overflow-hidden bg-background text-foreground">
             {/* Header */}
             <div className="z-10 w-full flex items-center justify-between font-mono text-sm mb-0 py-4 px-4 sm:px-8 h-[72px]">
-                <div className="relative inline-flex items-center group">
+                <div className="relative inline-flex items-center">
                     <img 
                         src="/branding_text.png" 
                         alt="Synchro" 
-                        className="h-6 w-auto opacity-90 group-hover:opacity-100 transition-opacity object-contain relative z-10" 
+                        className="w-32 object-contain" 
                     />
-                    {/* Gradient colour overlay — multiply keeps the black bg transparent */}
-                    <div className="absolute inset-0 z-20 bg-gradient-to-r from-purple-300 via-primary to-accent mix-blend-multiply opacity-90 group-hover:opacity-100 transition-opacity pointer-events-none" />
                 </div>
 
                 <div className="flex items-center justify-end">

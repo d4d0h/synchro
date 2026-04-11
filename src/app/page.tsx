@@ -363,13 +363,7 @@ export default function Home() {
         <main className="flex min-h-screen flex-col items-center px-8 pt-0 pb-0 relative overflow-hidden bg-background text-foreground">
             {/* Header */}
             <div className="z-10 w-full flex items-center justify-between font-mono text-sm mb-0 py-4 px-4 sm:px-8 h-[72px]">
-                <div className="relative inline-flex items-center">
-                    <img 
-                        src="/branding_text.png" 
-                        alt="Synchro" 
-                        className="w-32 object-contain" 
-                    />
-                </div>
+                <div />
 
                 <div className="flex items-center justify-end">
                     <GoogleSignIn />

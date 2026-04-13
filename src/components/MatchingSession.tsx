@@ -651,7 +651,7 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
             try {
                 const gId = await createGoogleCalendarEvent(
                     accessToken, event,
-                    `🤝 Meeting ${proposals[event.uid]?.proposerName || 'Peer'} via Synchro`
+                    `🤝 Meeting ${proposals[event.uid]?.proposerName || 'Peer'} 𝘷𝘪𝘢 𝘚𝘺𝘯𝘤𝘩𝘳𝘰`
                 );
                 setProposals(prev => ({ ...prev, [event.uid]: { ...prev[event.uid], status: 'accepted', googleEventId: gId } }));
                 setExportedEvents(prev => ({ ...prev, [event.uid]: gId }));
@@ -690,7 +690,7 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
         try {
             const gId = await createGoogleCalendarEvent(
                 accessToken, event,
-                `🤝 Meeting ${p?.proposerName || peerName || 'Peer'} via Synchro`
+                `🤝 Meeting ${p?.proposerName || peerName || 'Peer'} 𝘷𝘪𝘢 𝘚𝘺𝘯𝘤𝘩𝘳𝘰`
             );
             setProposals(prev => ({ ...prev, [event.uid]: { ...prev[event.uid], pendingCalendarAdd: false, googleEventId: gId } }));
             setExportedEvents(prev => ({ ...prev, [event.uid]: gId }));

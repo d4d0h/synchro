@@ -160,7 +160,7 @@ export async function savePrivateNote(
         parts.push(...systemLines);
     }
     if (bullets.length > 0) {
-        parts.push('🟣 Private Notes via Synchro');
+        parts.push('🟣 Private Notes 𝘷𝘪𝘢 𝘚𝘺𝘯𝘤𝘩𝘳𝘰');
         parts.push('──────────────────');
         for (const b of bullets) {
             parts.push(`• ${b.tag}: ${b.text}`);

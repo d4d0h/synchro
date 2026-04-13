@@ -43,6 +43,11 @@ export async function POST(request: NextRequest) {
         if (!sessions[sessionId]) {
             return NextResponse.json({ error: 'Session not found or expired. Ask your peer to create a new one.' }, { status: 404 });
         }
+        // Reject if someone already joined this session (code already used)
+        const hasJoiner = sessions[sessionId].messages.some((m: any) => m.type === 'JOIN');
+        if (hasJoiner) {
+            return NextResponse.json({ error: 'This session code has already been used.' }, { status: 409 });
+        }
         return NextResponse.json({ success: true });
     }
 

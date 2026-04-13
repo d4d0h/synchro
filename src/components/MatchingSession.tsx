@@ -128,7 +128,9 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
         if (googleEventId && accessToken) {
             setSavingNoteId(eventUid);
             try {
-                await savePrivateNote(accessToken, googleEventId, noteText, `w/ ${peerName || 'Peer'}`);
+                // Resolve peer name — prefer peerName state, fall back to session label
+                const resolvedPeer = peerName || sessionLabel.replace(/^Synchro w\/ /i, '').trim() || 'Peer';
+                await savePrivateNote(accessToken, googleEventId, noteText, `w/ ${resolvedPeer}`);
             } catch (e: any) {
                 console.error('Failed to update private note on Google Calendar', e);
                 if (e.message?.includes('401')) expireSession();
@@ -185,11 +187,11 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
         if (state === 'RESULTS' && sessionId && role && matches.length > 0) {
             const label = sessionLabel || 'Synchro w/ Peer';
             const all = getSavedSessions();
-            // Match by peerEmail (reliable) falling back to label (display name) for legacy sessions
+            // Match ONLY by peerEmail — never by display name/label
             const existingIdx = all.findIndex(s => {
                 if (s.id === sessionId) return false;
                 if (peerEmail && s.peerEmail) return s.peerEmail === peerEmail;
-                return (s.label || '') === label;
+                return false; // no email = no merge
             });
 
             if (existingIdx >= 0) {
@@ -242,7 +244,7 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
         // Restore peerEmail if stored
         if (s.peerEmail) setPeerEmail(s.peerEmail);
 
-        // Async: verify exported events still exist in GCal (Bug 8) and fetch private notes
+        // Async: verify exported events still exist in GCal
         if (accessToken && Object.keys(exported).length > 0) {
             Object.entries(exported).forEach(async ([uid, gId]) => {
                 try {
@@ -250,18 +252,6 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
                     if (!exists) {
                         // Event was deleted from GCal — clear export status
                         setExportedEvents(prev => { const n = {...prev}; delete n[uid]; return n; });
-                        return;
-                    }
-                    const res = await fetch(
-                        `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(gId)}`,
-                        { headers: { Authorization: `Bearer ${accessToken}` } }
-                    );
-                    if (res.ok) {
-                        const ev = await res.json();
-                        const note = ev.extendedProperties?.private?.synchro_note;
-                        if (note && !/^(🤝|🚫)/.test(note)) {
-                            setPrivateNotes(prev => ({ ...prev, [uid]: note }));
-                        }
                     }
                 } catch { /* silent */ }
             });
@@ -475,9 +465,9 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
         if (state === 'RESULTS' && peerName && viewMode !== 'HISTORY') {
             const existing = savedSessions.find(s => {
                 if (s.id === sessionId) return false;
-                // Match by email (reliable) then fall back to name
+                // Match ONLY by email — never by display name
                 if (peerEmail && s.peerEmail) return s.peerEmail === peerEmail;
-                return (s.label || '').toLowerCase().includes(peerName.toLowerCase());
+                return false;
             });
             if (existing) {
                 setDuplicateWarning({ label: peerName, session: existing });
@@ -530,7 +520,8 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
             const myPub = getPublicKey(privateKey);
             await sendMessage('JOIN', { publicKey: myPub, name: userName, email: userEmail }, inputSessionId);
         } else {
-            alert('Session not found');
+            const data = await res.json().catch(() => ({}));
+            alert(data.error || 'Invalid code. Try again or start a new session.');
         }
     };
 
@@ -683,7 +674,8 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
         const gId = proposals[uid]?.googleEventId || exportedEvents[uid];
         if (gId && accessToken) {
             try {
-                await savePrivateNote(accessToken, gId, `🚫 Canceled meeting w/ ${peerName || 'Peer'}`);
+                const resolvedPeer = peerName || sessionLabel.replace(/^Synchro w\/ /i, '').trim() || 'Peer';
+                await savePrivateNote(accessToken, gId, `🚫 Canceled meeting w/ ${resolvedPeer}`);
             } catch (e: any) {
                 console.warn('Failed to update GCal for cancellation', e);
                 if (e.message?.includes('401')) expireSession();

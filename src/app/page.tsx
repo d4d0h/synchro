@@ -7,7 +7,7 @@ import { CalendarEvent } from '@/lib/calendar';
 import { useGoogleAuth } from '@/lib/googleAuth';
 import { fetchLumaEvents } from '@/lib/lumaEvents';
 import { fetchGoogleConfig, saveGoogleConfig } from '@/lib/googleHistory';
-import { createGoogleCalendarEvent, savePrivateNote } from '@/lib/googleCalendar';
+import { createGoogleCalendarEvent, savePrivateNote, checkGoogleEventExists } from '@/lib/googleCalendar';
 import { Loader2, Calendar, Link as LinkIcon, ArrowRight, ShieldCheck, RefreshCw, ChevronDown, ChevronUp, MapPin, ExternalLink, CalendarPlus, StickyNote, Check, Lock, Users } from 'lucide-react';
 import { getSavedSessions } from '@/lib/sessionStorage';
 
@@ -28,6 +28,27 @@ function EventsList({ events, accessToken, onRefresh, isRefreshing }: { events: 
     });
     const [privateNoteText, setPrivateNoteText] = useState('');
     const [savingNoteId, setSavingNoteId] = useState<string | null>(null);
+
+    // Verify exported events still exist in GCal — clear stale entries
+    useEffect(() => {
+        if (!accessToken) return;
+        const entries = Object.entries(exportedEvents);
+        if (entries.length === 0) return;
+        entries.forEach(async ([uid, gId]) => {
+            try {
+                const exists = await checkGoogleEventExists(accessToken, gId);
+                if (!exists) {
+                    setExportedEvents(prev => {
+                        const next = { ...prev };
+                        delete next[uid];
+                        localStorage.setItem('synchro_my_exported', JSON.stringify(next));
+                        return next;
+                    });
+                }
+            } catch { /* silent */ }
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [accessToken]);
 
     // Meeting-with data — read from saved history sessions
     const savedSessions = getSavedSessions();

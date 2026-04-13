@@ -82,10 +82,15 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
     const handleExportToGoogle = async (event: CalendarEvent) => {
         setExportingEventId(event.uid);
         try {
-            // Only include the private note in the export
+            // Enrich event with description from current calendar if missing (saved sessions may lose it)
+            const enrichedEvent = { ...event };
+            if (!enrichedEvent.description) {
+                const fresh = events.find(e => e.uid === event.uid);
+                if (fresh?.description) enrichedEvent.description = fresh.description;
+            }
             const combinedNote = privateNotes[event.uid] ? privateNotes[event.uid] : '';
 
-            const gId = await createGoogleCalendarEvent(accessToken, event, combinedNote);
+            const gId = await createGoogleCalendarEvent(accessToken, enrichedEvent, combinedNote);
             setExportedEvents(prev => ({ ...prev, [event.uid]: gId }));
         } catch (e: any) {
             console.error('Failed to export to Google Calendar', e);
@@ -205,8 +210,10 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
                 const merged = { ...existing, matches: mergedMatches, proposals: mergedProposals, label, peerEmail: peerEmail || existing.peerEmail };
                 saveSession(merged);
             } else {
-                // No existing session with this peer — save fresh
-                saveSession({ id: sessionId, role, date: new Date().toISOString(), matches, notes: {}, privateNotes: privateNotes || {}, proposals, label, peerEmail: peerEmail || undefined });
+                // Check if this session already exists by ID (e.g. loaded from history)
+                const existingById = all.find(s => s.id === sessionId);
+                const date = existingById ? existingById.date : new Date().toISOString();
+                saveSession({ id: sessionId, role, date, matches, notes: {}, privateNotes: privateNotes || {}, proposals, label, peerEmail: peerEmail || undefined });
             }
 
             const updated = getSavedSessions();
@@ -775,7 +782,7 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
                         </div>
                     ) : (
                         <div className="grid gap-2 mt-2">
-                            {[...savedSessions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map(s => (
+                            {[...savedSessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(s => (
                                 <div 
                                     key={s.id}
                                     onClick={() => loadSavedSession(s)}
@@ -1035,16 +1042,21 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
                                         <span>You declined this proposal</span>
                                     </div>
                                 )}
-                                {proposals[event.uid]?.status === 'cancelled' && (
-                                    <div className="px-3 py-2 rounded-lg bg-red-900/20 border border-red-700/30 text-sm text-red-400 flex items-center gap-2">
-                                        <Ban className="w-4 h-4 shrink-0" />
-                                        <span>Canceled meeting w/ {
-                                            proposals[event.uid]?.cancelledByName === userName
-                                                ? (peerName || 'Peer')
-                                                : (proposals[event.uid]?.cancelledByName || peerName || 'Peer')
-                                        }</span>
-                                    </div>
-                                )}
+                                {proposals[event.uid]?.status === 'cancelled' && (() => {
+                                    const p = proposals[event.uid]!;
+                                    const wasMeeting = p.googleEventId || exportedEvents[event.uid];
+                                    const iCancelled = p.cancelledByName === userName;
+                                    const peerLabel = iCancelled ? (peerName || 'Peer') : (p.cancelledByName || peerName || 'Peer');
+                                    return (
+                                        <div className="px-3 py-2 rounded-lg bg-red-900/20 border border-red-700/30 text-sm text-red-400 flex items-center gap-2">
+                                            <Ban className="w-4 h-4 shrink-0" />
+                                            <span>{wasMeeting
+                                                ? `Canceled meeting w/ ${peerLabel}`
+                                                : (iCancelled ? 'Proposal withdrawn' : `${peerLabel} withdrew their proposal`)}
+                                            </span>
+                                        </div>
+                                    );
+                                })()}
 
                                 {/* Offline catch-up: accepted but calendar not yet created */}
                                 {proposals[event.uid]?.status === 'accepted' && proposals[event.uid]?.pendingCalendarAdd && !proposals[event.uid]?.googleEventId && (

@@ -534,6 +534,8 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
                 // Auto-redirect to existing session in Sessions tab
                 addLog(`Previous session with ${peerName} found — redirecting you now.`);
                 setDuplicateWarning({ label: peerName, session: existing });
+                // Persist the warning so the HISTORY instance can show it after tab switch
+                localStorage.setItem('synchro_duplicate_redirect', JSON.stringify({ id: existing.id, label: peerName }));
                 setTimeout(() => {
                     onSwitchToSessions?.();
                     onSessionChange?.(existing.id);
@@ -959,6 +961,8 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
                                 onClick={() => {
                                     setState('IDLE');
                                     isViewingRef.current = false;
+                                    setDuplicateWarning(null);
+                                    localStorage.removeItem('synchro_duplicate_redirect');
                                     localStorage.removeItem('synchro_active_session');
                                     setMatches([]);
                                     setProposals({});
@@ -1015,6 +1019,8 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
                                     handleDeleteSession(sessionId, e);
                                     setState('IDLE');
                                     isViewingRef.current = false;
+                                    setDuplicateWarning(null);
+                                    localStorage.removeItem('synchro_duplicate_redirect');
                                     localStorage.removeItem('synchro_active_session');
                                     setMatches([]);
                                 }}
@@ -1030,12 +1036,18 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
                         <div className="text-sm font-bold text-zinc-400 uppercase tracking-widest">{matches.length} Matches Found</div>
                     </div>
 
-                    {/* Duplicate peer warning — shown when a session with this peer already exists */}
-                    {duplicateWarning && viewMode !== 'HISTORY' && (
-                        <div className="mb-4 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-sm text-amber-300">
-                            <span>Previous session with <strong>{duplicateWarning.label}</strong> found — proposals merged into existing record.</span>
-                        </div>
-                    )}
+                    {/* Duplicate peer warning — reads directly from localStorage to survive cross-instance tab switches */}
+                    {(() => {
+                        try {
+                            const p = JSON.parse(localStorage.getItem('synchro_duplicate_redirect') || 'null');
+                            if (p && p.id === sessionId) return (
+                                <div className="mb-4 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-sm text-amber-300">
+                                    <span>Previous session with <strong>{p.label}</strong> found — proposals merged into existing record.</span>
+                                </div>
+                            );
+                        } catch {}
+                        return null;
+                    })()}
 
                     <div className="grid gap-4">
                         {displayMode === 'list' ? matches.map(event => (

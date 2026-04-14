@@ -258,6 +258,8 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
     }, [state, sessionId, role, matches, proposals, sessionLabel, accessToken]);
 
     const loadSavedSession = (s: SavedSession) => {
+        // Clear processed messages so new signals from peer are picked up
+        processedMsgIdsRef.current = new Set();
         setSessionId(s.id);
         setRole(s.role as any);
         setMatches(s.matches);
@@ -265,6 +267,17 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
         setPrivateNotes(s.privateNotes || {});
         setSessionLabel(s.label || '');
         setState('RESULTS');
+
+        // Clear notifications for this session
+        try {
+            const notifs = JSON.parse(localStorage.getItem('synchro_notifications') || '{}');
+            delete notifs[s.id];
+            localStorage.setItem('synchro_notifications', JSON.stringify(notifs));
+        } catch { /* silent */ }
+
+        // Restore peer name from label
+        const peerFromLabel = (s.label || '').replace(/^Synchro w\/ /i, '').trim();
+        if (peerFromLabel) setPeerName(peerFromLabel);
 
         // Populate exportedEvents from saved proposals so GCal export state is restored
         const exported: Record<string, string> = {};
@@ -289,6 +302,16 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
             });
         }
     };
+
+    // Auto-load session when activeSessionId changes in HISTORY mode
+    useEffect(() => {
+        if (viewMode !== 'HISTORY' || !activeSessionId) return;
+        const session = savedSessions.find(s => s.id === activeSessionId);
+        if (session) {
+            loadSavedSession(session);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeSessionId, viewMode]);
 
     const handleDeleteSession = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -396,33 +419,38 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
 
         // Handle Meeting Proposals (after RESULTS)
         if (state === 'RESULTS') {
+            // Helper: track notification for this session
+            const addNotification = () => {
+                try {
+                    const notifs = JSON.parse(localStorage.getItem('synchro_notifications') || '{}');
+                    notifs[sessionId] = (notifs[sessionId] || 0) + 1;
+                    localStorage.setItem('synchro_notifications', JSON.stringify(notifs));
+                } catch { /* silent */ }
+            };
+
             for (const msg of newMessages) {
                 if (msg.type === 'PROPOSAL') {
                     const { uid, proposerName: pName } = msg.payload;
                     setFlashedEvents(prev => ({ ...prev, [uid]: 'positive' }));
                     setTimeout(() => setFlashedEvents(prev => { const n = {...prev}; delete n[uid]; return n; }), 3000);
-                    // Only block new proposals if meeting was already accepted (truly final)
-                    // Allow re-proposals after rejection or cancellation
                     setProposals(prev => {
                         const existing = prev[uid];
                         if (existing && existing.status === 'accepted') {
-                            return prev; // meeting already confirmed, ignore
+                            return prev;
                         }
                         return { ...prev, [uid]: { status: 'proposed', proposedBy: 'peer', proposerName: pName } };
                     });
+                    addNotification();
                 }
                 if (msg.type === 'PROPOSAL_ACCEPT') {
                     const { uid, acceptorName } = msg.payload;
                     setFlashedEvents(prev => ({ ...prev, [uid]: 'positive' }));
                     setTimeout(() => setFlashedEvents(prev => { const n = {...prev}; delete n[uid]; return n; }), 3000);
-                    // Peer accepted our proposal — create the event on our calendar
-                    // Use acceptorName from the signal payload to avoid stale closure issue
                     const resolvedPeerName = acceptorName || peerName || 'Peer';
                     setProposals(prev => ({
                         ...prev,
                         [uid]: { ...prev[uid], status: 'accepted' }
                     }));
-                    // Find the event and create it in our calendar
                     const event = matches.find(e => e.uid === uid);
                     if (event && accessToken) {
                         createGoogleCalendarEvent(accessToken, event, `🤝 Meeting ${resolvedPeerName} 𝘷𝘪𝘢 𝘚𝘺𝘯𝘤𝘩𝘳𝘰`)
@@ -439,6 +467,7 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
                                 if (e.message.includes('401')) expireSession();
                             });
                     }
+                    addNotification();
                 }
                 if (msg.type === 'PROPOSAL_REJECT') {
                     const { uid } = msg.payload;
@@ -448,6 +477,7 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
                         ...prev,
                         [uid]: { ...prev[uid], status: 'rejected_by_peer' }
                     }));
+                    addNotification();
                 }
                 if (msg.type === 'PROPOSAL_CANCEL') {
                     const { uid, cancellerName } = msg.payload;
@@ -457,12 +487,12 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
                         ...prev,
                         [uid]: { ...prev[uid], status: 'cancelled', cancelledByName: cancellerName }
                     }));
-                    // Update GCal if we exported this event
                     const gId = exportedEvents[uid];
                     if (gId && accessToken) {
                         savePrivateNote(accessToken, gId, `🚫 Canceled meeting w/ ${cancellerName}`)
                             .catch(e => console.warn('Failed to update GCal for cancellation', e));
                     }
+                    addNotification();
                 }
             }
         }
@@ -836,7 +866,11 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
                         </div>
                     ) : (
                         <div className="grid gap-2 mt-2">
-                            {[...savedSessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(s => (
+                            {[...savedSessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(s => {
+                                // Check notification count for this session
+                                let sessionNotifs = 0;
+                                try { sessionNotifs = JSON.parse(localStorage.getItem('synchro_notifications') || '{}')[s.id] || 0; } catch {}
+                                return (
                                 <div 
                                     key={s.id}
                                     onClick={() => loadSavedSession(s)}
@@ -845,7 +879,7 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
                                     <div className="flex-1 text-left">
                                         <div className="font-bold text-zinc-200 group-hover:text-primary transition-colors flex items-center gap-2">
                                             {s.label?.includes('Session with Peer') ? 'Synchro w/ Peer' : (s.label || 'Synchro w/ Peer')}
-                                            {Object.values(s.proposals || {}).some(p => p.status === 'proposed' && p.proposedBy === 'peer') && (
+                                            {sessionNotifs > 0 && (
                                                 <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
                                             )}
                                         </div>
@@ -869,7 +903,8 @@ export function MatchingSession({ events, accessToken, userName, userEmail, view
                                         <Trash2 className="w-5 h-5" />
                                     </button>
                                 </div>
-                            ))}
+                            );
+                            })}
                         </div>
                     )}
                 </div>

@@ -684,12 +684,10 @@ export default function Home() {
                                             // Compute notification count for Sessions tab
                                             let badgeCount = 0;
                                             if (tab === 'history') {
-                                                const allSessions = getSavedSessions();
-                                                for (const s of allSessions) {
-                                                    for (const p of Object.values(s.proposals || {})) {
-                                                        if (p.status === 'proposed' && p.proposedBy === 'peer') badgeCount++;
-                                                    }
-                                                }
+                                                try {
+                                                    const notifs = JSON.parse(localStorage.getItem('synchro_notifications') || '{}');
+                                                    badgeCount = Object.values(notifs).reduce((sum: number, n) => sum + (n as number), 0);
+                                                } catch { /* silent */ }
                                             }
                                             return (
                                             <button

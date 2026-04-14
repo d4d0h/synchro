@@ -134,14 +134,14 @@ export async function savePrivateNote(
 
     // 2. Update the right section
     if (isSystemNote) {
-        if (note.startsWith('🚫')) {
-            const peerMatch = note.match(/w\/ (.+?)$/);
-            const peer = peerMatch?.[1]?.trim();
-            systemLines = systemLines.filter(l => !(l.startsWith('🤝') && peer && l.includes(peer)));
-            systemLines.push(note);
-        } else {
-            if (!systemLines.includes(note)) systemLines.push(note);
+        // Extract peer name from the note (e.g. "🤝 Meeting Anastasia 𝘷𝘪𝘢 𝘚𝘺𝘯𝘤𝘩𝘳𝘰" or "🚫 Canceled meeting w/ Anastasia")
+        const peerMatch = note.match(/(?:Meeting |w\/ )(.+?)(?:\s+𝘷𝘪𝘢|$)/);
+        const peer = peerMatch?.[1]?.trim();
+        if (peer) {
+            // Remove ALL existing system notes for this peer (both 🤝 and 🚫)
+            systemLines = systemLines.filter(l => !l.includes(peer));
         }
+        systemLines.push(note);
     } else if (note !== undefined) {
         const existingIdx = bullets.findIndex(b => b.tag === sourceTag);
         if (note === '') {

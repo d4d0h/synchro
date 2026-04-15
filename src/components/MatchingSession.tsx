@@ -9,7 +9,8 @@ import {
     encryptNote,
     decryptNote,
     computeSharedSecret,
-    getPublicKey
+    getPublicKey,
+    sessionFingerprint
 } from '@/lib/crypto';
 import { savePrivateNote } from '@/lib/googleCalendar';
 import { Loader2, Copy, Check, MessageSquare, Lock, Trash2, ArrowLeft } from 'lucide-react';
@@ -534,6 +535,16 @@ export function MatchingSession({ events, accessToken }: Props) {
                     <h3 className="text-2xl font-bold text-center">
                         Found {matches.length} Mutual Events
                     </h3>
+
+                    {sharedSecret && (
+                        <div className="flex items-center justify-center gap-2 text-xs text-zinc-500">
+                            <Lock className="w-3 h-3" />
+                            <span>Session fingerprint:</span>
+                            <span className="font-mono tracking-widest text-zinc-400 animate-[fadeIn_0.6s_ease-in]">
+                                {sessionFingerprint(sharedSecret)}
+                            </span>
+                        </div>
+                    )}
                     <div className="grid gap-4">
                         {matches.map(event => (
                             <div key={event.uid} className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700 flex flex-col gap-4">

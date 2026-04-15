@@ -80,6 +80,16 @@ export function getPublicKey(privateKey: Uint8Array): string {
     return bytesToHex(secp256k1.getPublicKey(privateKey, true));
 }
 
+// Derive a short human-readable fingerprint from the shared secret.
+// Both peers derive the same value — they can compare it out-of-band
+// to detect a relay MITM after the fact (Signal Safety Numbers pattern).
+export function sessionFingerprint(sharedSecretHex: string): string {
+    const b = hexToBytes(sharedSecretHex);
+    const a = ((b[0] << 8) | b[1]).toString().padStart(4, '0');
+    const c = ((b[2] << 8) | b[3]).toString().padStart(4, '0');
+    return `${a} ${c}`;
+}
+
 export function computeSharedSecret(theirPublicKeyHex: string, myPrivateKey: Uint8Array): string {
     if (!theirPublicKeyHex || typeof theirPublicKeyHex !== 'string') {
         throw new Error(`Invalid public key: ${typeof theirPublicKeyHex}`);

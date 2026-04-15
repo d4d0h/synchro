@@ -8,14 +8,6 @@ const ALLOWED_HOSTS = new Set([
     'caldav.icloud.com',
 ]);
 
-const PRIVATE_IP_RE = [
-    /^127\./,
-    /^10\./,
-    /^192\.168\./,
-    /^169\.254\./,
-    /^::1$/,
-];
-
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
 
 export async function GET(request: NextRequest) {
@@ -38,10 +30,6 @@ export async function GET(request: NextRequest) {
 
     if (!ALLOWED_HOSTS.has(parsed.hostname)) {
         return NextResponse.json({ error: 'Host not allowed' }, { status: 403 });
-    }
-
-    if (PRIVATE_IP_RE.some(re => re.test(parsed.hostname))) {
-        return NextResponse.json({ error: 'Private addresses are not allowed' }, { status: 403 });
     }
 
     try {

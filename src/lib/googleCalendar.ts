@@ -11,7 +11,7 @@ async function getNoteKey(): Promise<CryptoKey> {
     }
     const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
     const exported = await crypto.subtle.exportKey('raw', key);
-    localStorage.setItem(NOTE_KEY_STORAGE, btoa(String.fromCharCode(...new Uint8Array(exported))));
+    localStorage.setItem(NOTE_KEY_STORAGE, btoa(Array.from(new Uint8Array(exported), c => String.fromCharCode(c)).join('')));
     return key;
 }
 
@@ -23,7 +23,7 @@ async function encryptNoteText(text: string): Promise<string> {
     const combined = new Uint8Array(iv.byteLength + ciphertext.byteLength);
     combined.set(iv, 0);
     combined.set(new Uint8Array(ciphertext), iv.byteLength);
-    return ENC_PREFIX + btoa(String.fromCharCode(...combined));
+    return ENC_PREFIX + btoa(Array.from(combined, c => String.fromCharCode(c)).join(''));
 }
 
 async function decryptNoteText(stored: string): Promise<string> {

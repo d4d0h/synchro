@@ -182,9 +182,9 @@ export function MatchingSession({ events, accessToken }: Props) {
         }
     }, [role, state, events, privateKey, joinerDoubleBlindedA, sharedSecret, notes]);
 
-    // Polling — stops automatically when session reaches RESULTS
+    // Polling — continues through RESULTS so NOTE messages can be received
     useEffect(() => {
-        if (!sessionId || state === 'RESULTS') return;
+        if (!sessionId) return;
 
         const interval = setInterval(async () => {
             try {

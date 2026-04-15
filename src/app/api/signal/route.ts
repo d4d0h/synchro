@@ -12,6 +12,8 @@ const sessions: Record<string, Session> = {};
 
 const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
 const MAX_SESSIONS = 100;
+const MAX_MESSAGES_PER_SESSION = 500;
+const MAX_PAYLOAD_BYTES = 64 * 1024; // 64 KB
 
 function cleanupSessions() {
     const now = Date.now();
@@ -66,6 +68,12 @@ export async function POST(request: NextRequest) {
     if (action === 'send') {
         if (!sessions[sessionId]) {
             return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+        }
+        if (JSON.stringify(payload).length > MAX_PAYLOAD_BYTES) {
+            return NextResponse.json({ error: 'Payload too large' }, { status: 413 });
+        }
+        if (sessions[sessionId].messages.length >= MAX_MESSAGES_PER_SESSION) {
+            return NextResponse.json({ error: 'Session message limit reached' }, { status: 429 });
         }
         sessions[sessionId].messages.push(payload);
         return NextResponse.json({ success: true });

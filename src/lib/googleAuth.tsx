@@ -59,7 +59,7 @@ export function GoogleAuthProvider({ children }: { children: ReactNode }) {
                 const info = await res.json();
                 setUser({ email: info.email, name: info.name, picture: info.picture });
                 setAccessToken(tokenResponse.access_token);
-                setTokenExpiresAt(Date.now() + 3600 * 1000);
+                setTokenExpiresAt(Date.now() + (tokenResponse.expires_in ?? 3600) * 1000);
             } catch (e) {
                 console.error('Failed to fetch Google user info', e);
             } finally {

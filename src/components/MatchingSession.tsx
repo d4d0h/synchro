@@ -118,33 +118,15 @@ export function MatchingSession({ events, accessToken }: Props) {
     const [joinerDoubleBlindedA, setJoinerDoubleBlindedA] = useState<string[]>([]);
 
     const handleMessages = useCallback(async (messages: Message[]) => {
-        console.log('[handleMessages] Called with', messages.length, 'messages');
-        console.log('[handleMessages] Current state:', state, 'role:', role);
-
         const myId = role;
-        if (!myId) {
-            console.log('[handleMessages] No role set, returning');
-            return;
-        }
+        if (!myId) return;
 
         const relevant = messages.filter(m => m.sender !== myId);
-        console.log('[handleMessages] Relevant messages:', relevant.length);
         if (relevant.length === 0) return;
 
-        // Process all new messages? Or just the last one?
-        // For notes, we might receive multiple.
-        // For handshake, state machine handles it.
-        // Let's iterate.
-
-        // We need to track processed messages to avoid re-processing.
-        // Simplified: Just look at the last one for state transitions.
-        // For notes, we need to scan all.
-
         const lastMsg = relevant[relevant.length - 1];
-        console.log('[handleMessages] Processing message type:', lastMsg.type);
 
         if (state === 'CREATED' && lastMsg.type === 'JOIN') {
-            console.log('[handleMessages] INITIATOR: Peer joined, starting PSI');
             setState('EXCHANGING');
             addLog('Peer joined. Starting handshake...');
 
@@ -155,7 +137,6 @@ export function MatchingSession({ events, accessToken }: Props) {
                 addLog('Encryption channel established.');
             }
 
-            console.log('[handleMessages] About to call startPsiStep1, function exists:', typeof startPsiStep1);
             await startPsiStep1();
         }
 
@@ -201,9 +182,9 @@ export function MatchingSession({ events, accessToken }: Props) {
         }
     }, [role, state, events, privateKey, joinerDoubleBlindedA, sharedSecret, notes]);
 
-    // Polling - moved here after handleMessages is defined
+    // Polling — stops automatically when session reaches RESULTS
     useEffect(() => {
-        if (!sessionId) return;
+        if (!sessionId || state === 'RESULTS') return;
 
         const interval = setInterval(async () => {
             try {
@@ -221,47 +202,53 @@ export function MatchingSession({ events, accessToken }: Props) {
         }, 2000);
 
         return () => clearInterval(interval);
-    }, [sessionId, handleMessages]);
+    }, [sessionId, state, handleMessages]);
 
     const createSession = async () => {
-        const res = await fetch('/api/signal', {
-            method: 'POST',
-            body: JSON.stringify({ action: 'create' }),
-        });
-        const data = await res.json();
-        setSessionId(data.sessionId);
-        setRole('INITIATOR');
-        setState('CREATED');
-        addLog(`Session created: ${data.sessionId}`);
+        try {
+            const res = await fetch('/api/signal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'create' }),
+            });
+            if (!res.ok) throw new Error(`Server error: ${res.status}`);
+            const data = await res.json();
+            setSessionId(data.sessionId);
+            setRole('INITIATOR');
+            setState('CREATED');
+            addLog(`Session created: ${data.sessionId}`);
+        } catch (e) {
+            alert(`Failed to create session: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        }
     };
 
     const joinSession = async () => {
         if (!inputSessionId) return;
-        const res = await fetch('/api/signal', {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'join',
-                sessionId: inputSessionId,
-            }),
-        });
-        if (res.ok) {
-            setSessionId(inputSessionId);
-            setRole('JOINER');
-            setState('EXCHANGING'); // Wait for Step 1
-            addLog(`Joined session: ${inputSessionId}`);
-            // Notify initiator with my Public Key
-            const myPub = getPublicKey(privateKey);
-            await sendMessage('JOIN', { publicKey: myPub }, inputSessionId);
-        } else {
-            alert('Session not found');
+        try {
+            const res = await fetch('/api/signal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'join', sessionId: inputSessionId }),
+            });
+            if (res.ok) {
+                setSessionId(inputSessionId);
+                setRole('JOINER');
+                setState('EXCHANGING');
+                addLog(`Joined session: ${inputSessionId}`);
+                const myPub = getPublicKey(privateKey);
+                await sendMessage('JOIN', { publicKey: myPub }, inputSessionId);
+            } else {
+                alert('Session not found');
+            }
+        } catch (e) {
+            alert(`Failed to join session: ${e instanceof Error ? e.message : 'Unknown error'}`);
         }
     };
 
     const sendMessage = async (type: string, payload: any, sid?: string) => {
         const targetSessionId = sid || sessionId;
-        console.log('[sendMessage] Sending', type, 'to session', targetSessionId);
         try {
-            const res = await fetch('/api/signal', {
+            await fetch('/api/signal', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -270,16 +257,8 @@ export function MatchingSession({ events, accessToken }: Props) {
                     payload: { type, sender: role, payload }
                 }),
             });
-
-            if (!res.ok) {
-                console.error('[sendMessage] Failed:', res.status, res.statusText);
-                const errorData = await res.json().catch(() => ({}));
-                console.error('[sendMessage] Error data:', errorData);
-            } else {
-                console.log('[sendMessage] Success:', type);
-            }
         } catch (error) {
-            console.error('[sendMessage] Exception:', error);
+            console.error('Failed to send message:', error);
         }
     };
 

@@ -69,7 +69,8 @@ function parseMessage(raw: unknown): TypedMessage | null {
             if (typeof p === 'object' && p !== null
                 && isString((p as NotePayload).uid)
                 && isString((p as NotePayload).encrypted)
-                && typeof (p as NotePayload).seq === 'number')
+                && Number.isFinite((p as NotePayload).seq)
+                && (p as NotePayload).seq >= 0)
                 return { type: 'NOTE', sender: m.sender, payload: p as NotePayload };
             break;
     }
@@ -219,11 +220,11 @@ export function MatchingSession({ events, accessToken }: Props) {
                 if (msg.type === 'NOTE') {
                     const { uid, encrypted, seq } = msg.payload;
                     if (seq <= noteLastSeqRef.current) continue; // replay — discard
+                    noteLastSeqRef.current = seq; // claim seq before await to close race window
                     const secret = sharedSecretRef.current;
                     if (secret) {
                         try {
                             const decrypted = await decryptNote(encrypted, secret);
-                            noteLastSeqRef.current = seq;
                             setNotes(prev => ({ ...prev, [uid]: decrypted }));
                         } catch (e) {
                             console.error('Failed to decrypt note', e);
@@ -358,10 +359,10 @@ export function MatchingSession({ events, accessToken }: Props) {
         }
 
         setMatches(matchedEvents);
-        setState('RESULTS');
         addLog(`Found ${matchedEvents.length} matches!`);
 
         await sendMessage('STEP_3', myDoubleBlindedB);
+        setState('RESULTS'); // after send — Joiner won't get stuck if network fails
     };
 
     const finalizeJoiner = async (theirDoubleBlindedB: string[]) => {

@@ -90,8 +90,9 @@ export function computeSharedSecret(theirPublicKeyHex: string, myPrivateKey: Uin
     }
 
     const cleanKey = theirPublicKeyHex.trim().replace(/^0x/, '');
-    const shared = secp256k1.getSharedSecret(myPrivateKey, cleanKey);
+    const shared = secp256k1.getSharedSecret(myPrivateKey, cleanKey); // 33-byte compressed point
+    const xOnly = shared.slice(1); // x-coordinate only (RFC 6090 / NIST SP 800-56A); drop parity prefix
     // HKDF-SHA256: derive 32-byte key with domain-separated info label
-    const derived = hkdf(sha256, shared, undefined, utf8ToBytes('synchro-note-encryption-v1'), 32);
+    const derived = hkdf(sha256, xOnly, undefined, utf8ToBytes('synchro-note-encryption-v1'), 32);
     return bytesToHex(derived);
 }

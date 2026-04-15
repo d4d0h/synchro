@@ -12,7 +12,9 @@ const STORAGE_KEY = 'synchro_saved_sessions';
 const KEY_STORAGE = 'synchro_sessions_key';
 const ENC_PREFIX = 'enc:';
 
-// Device-bound AES-GCM key — protects against storage file exfiltration
+// AES-GCM key stored alongside the data it protects in localStorage.
+// Mitigates offline file-copy attacks (e.g. stolen disk image) but does NOT
+// protect against XSS or malicious browser extensions that can read localStorage directly.
 async function getStorageKey(): Promise<CryptoKey> {
     const stored = localStorage.getItem(KEY_STORAGE);
     if (stored) {

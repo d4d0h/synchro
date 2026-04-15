@@ -66,12 +66,24 @@ export async function fetchGoogleCalendarEvents(accessToken: string): Promise<Ca
         throw new Error(`Google Calendar API error ${res.status}: ${err}`);
     }
 
+    interface GCalItem {
+        id: string;
+        iCalUID?: string;
+        summary?: string;
+        start?: { dateTime?: string; date?: string };
+        end?: { dateTime?: string; date?: string };
+        description?: string;
+        location?: string;
+        htmlLink?: string;
+        extendedProperties?: { private?: { synchro_note?: string } };
+    }
+
     const data = await res.json();
 
-    const items = (data.items ?? []).filter((item: any) => item.start);
+    const items = (data.items as GCalItem[] ?? []).filter(item => item.start);
 
     const events = await Promise.all(
-        items.map(async (item: any): Promise<CalendarEvent> => {
+        items.map(async (item): Promise<CalendarEvent> => {
             const rawNote = item.extendedProperties?.private?.synchro_note;
             return {
                 uid: item.iCalUID ?? item.id,

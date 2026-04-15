@@ -22,10 +22,58 @@ interface Props {
 
 type State = 'IDLE' | 'CREATED' | 'JOINING' | 'EXCHANGING' | 'COMPUTING' | 'RESULTS';
 
-interface Message {
-    type: 'JOIN' | 'STEP_1' | 'STEP_2' | 'STEP_3' | 'NOTE';
-    sender: string;
-    payload: any;
+// Typed message payloads — validated before use (ALP-191)
+interface JoinPayload { publicKey: string }
+interface Step1Payload { blinded: string[]; publicKey: string }
+interface Step2Payload { doubleBlinded: string[]; blinded: string[] }
+interface NotePayload { uid: string; encrypted: string; seq: number }
+
+type TypedMessage =
+    | { type: 'JOIN';   sender: string; payload: JoinPayload }
+    | { type: 'STEP_1'; sender: string; payload: Step1Payload }
+    | { type: 'STEP_2'; sender: string; payload: Step2Payload }
+    | { type: 'STEP_3'; sender: string; payload: string[] }
+    | { type: 'NOTE';   sender: string; payload: NotePayload };
+
+function isString(v: unknown): v is string { return typeof v === 'string'; }
+function isStringArray(v: unknown): v is string[] {
+    return Array.isArray(v) && v.every(isString);
+}
+function parseMessage(raw: unknown): TypedMessage | null {
+    if (typeof raw !== 'object' || raw === null) return null;
+    const m = raw as Record<string, unknown>;
+    if (!isString(m.type) || !isString(m.sender)) return null;
+    const p = m.payload;
+    switch (m.type) {
+        case 'JOIN':
+            if (typeof p === 'object' && p !== null && isString((p as JoinPayload).publicKey))
+                return { type: 'JOIN', sender: m.sender, payload: p as JoinPayload };
+            break;
+        case 'STEP_1':
+            if (typeof p === 'object' && p !== null
+                && isStringArray((p as Step1Payload).blinded)
+                && isString((p as Step1Payload).publicKey))
+                return { type: 'STEP_1', sender: m.sender, payload: p as Step1Payload };
+            break;
+        case 'STEP_2':
+            if (typeof p === 'object' && p !== null
+                && isStringArray((p as Step2Payload).doubleBlinded)
+                && isStringArray((p as Step2Payload).blinded))
+                return { type: 'STEP_2', sender: m.sender, payload: p as Step2Payload };
+            break;
+        case 'STEP_3':
+            if (isStringArray(p))
+                return { type: 'STEP_3', sender: m.sender, payload: p };
+            break;
+        case 'NOTE':
+            if (typeof p === 'object' && p !== null
+                && isString((p as NotePayload).uid)
+                && isString((p as NotePayload).encrypted)
+                && typeof (p as NotePayload).seq === 'number')
+                return { type: 'NOTE', sender: m.sender, payload: p as NotePayload };
+            break;
+    }
+    return null;
 }
 
 export function MatchingSession({ events, accessToken }: Props) {
@@ -46,6 +94,8 @@ export function MatchingSession({ events, accessToken }: Props) {
     const roleRef = useRef(role);
     const sharedSecretRef = useRef(sharedSecret);
     const joinerDoubleBlindedARef = useRef<string[]>([]);
+    const noteSendSeqRef = useRef(0);       // monotonically increasing send counter (ALP-184)
+    const noteLastSeqRef = useRef(-1);      // last accepted receive seq from peer
     useEffect(() => { stateRef.current = state; }, [state]);
     useEffect(() => { roleRef.current = role; }, [role]);
     useEffect(() => { sharedSecretRef.current = sharedSecret; }, [sharedSecret]);
@@ -88,46 +138,46 @@ export function MatchingSession({ events, accessToken }: Props) {
     const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
 
     useEffect(() => {
-        setSavedSessions(getSavedSessions());
+        getSavedSessions().then(setSavedSessions);
     }, []);
 
     // Effect to auto-save current active session
     useEffect(() => {
         if (state === 'RESULTS' && sessionId && role) {
-            saveSession({
-                id: sessionId,
-                role,
-                date: new Date().toISOString(),
-                matches,
-                notes
-            });
-            // Refresh list in background
-            setSavedSessions(getSavedSessions());
+            saveSession({ id: sessionId, role, date: new Date().toISOString(), matches, notes })
+                .then(() => getSavedSessions())
+                .then(setSavedSessions);
         }
     }, [state, sessionId, role, matches, notes]);
 
     const loadSavedSession = (s: SavedSession) => {
         setSessionId(s.id);
-        setRole(s.role as any);
+        setRole(s.role); // SavedSession.role is now 'INITIATOR' | 'JOINER' — no cast needed
         setMatches(s.matches);
         setNotes(s.notes);
         setState('RESULTS');
     };
 
-    const handleDeleteSession = (id: string, e: React.MouseEvent) => {
+    const handleDeleteSession = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         if (confirm('Delete this saved session?')) {
-            deleteSession(id);
-            setSavedSessions(getSavedSessions());
+            await deleteSession(id);
+            getSavedSessions().then(setSavedSessions);
         }
     };
 
     const addLog = (msg: string) => setLogs((prev: string[]) => [...prev, msg]);
 
-    const handleMessages = useCallback(async (messages: Message[]) => {
+    const handleMessages = useCallback(async (rawMessages: unknown[]) => {
         const myId = roleRef.current;
         const currentState = stateRef.current;
         if (!myId) return;
+
+        // Validate and type-narrow all messages at the boundary (ALP-191)
+        const messages = rawMessages.flatMap(m => {
+            const parsed = parseMessage(m);
+            return parsed ? [parsed] : [];
+        });
 
         const relevant = messages.filter(m => m.sender !== myId);
         if (relevant.length === 0) return;
@@ -137,28 +187,20 @@ export function MatchingSession({ events, accessToken }: Props) {
         if (currentState === 'CREATED' && lastMsg.type === 'JOIN') {
             setState('EXCHANGING');
             addLog('Peer joined. Starting handshake...');
-
-            if (lastMsg.payload.publicKey) {
-                const secret = computeSharedSecret(lastMsg.payload.publicKey, ecdhKey);
-                setSharedSecret(secret);
-                sharedSecretRef.current = secret;
-                addLog('Encryption channel established.');
-            }
-
+            const secret = computeSharedSecret(lastMsg.payload.publicKey, ecdhKey);
+            setSharedSecret(secret);
+            sharedSecretRef.current = secret;
+            addLog('Encryption channel established.');
             await startPsiStep1();
         }
 
         if (currentState === 'EXCHANGING') {
             if (myId === 'JOINER' && lastMsg.type === 'STEP_1') {
                 addLog('Received Step 1 from Initiator.');
-
-                if (lastMsg.payload.publicKey) {
-                    const secret = computeSharedSecret(lastMsg.payload.publicKey, ecdhKey);
-                    setSharedSecret(secret);
-                    sharedSecretRef.current = secret;
-                    addLog('Encryption channel established.');
-                }
-
+                const secret = computeSharedSecret(lastMsg.payload.publicKey, ecdhKey);
+                setSharedSecret(secret);
+                sharedSecretRef.current = secret;
+                addLog('Encryption channel established.');
                 await runPsiStep2(lastMsg.payload.blinded);
             }
             if (myId === 'INITIATOR' && lastMsg.type === 'STEP_2') {
@@ -171,15 +213,17 @@ export function MatchingSession({ events, accessToken }: Props) {
             }
         }
 
-        // Handle Notes — active in RESULTS state
+        // Handle Notes — active in RESULTS state; seq enforced for replay protection (ALP-184)
         if (currentState === 'RESULTS') {
             for (const msg of relevant) {
                 if (msg.type === 'NOTE') {
-                    const { uid, encrypted } = msg.payload;
+                    const { uid, encrypted, seq } = msg.payload;
+                    if (seq <= noteLastSeqRef.current) continue; // replay — discard
                     const secret = sharedSecretRef.current;
                     if (secret) {
                         try {
                             const decrypted = await decryptNote(encrypted, secret);
+                            noteLastSeqRef.current = seq;
                             setNotes(prev => ({ ...prev, [uid]: decrypted }));
                         } catch (e) {
                             console.error('Failed to decrypt note', e);
@@ -254,7 +298,7 @@ export function MatchingSession({ events, accessToken }: Props) {
         }
     };
 
-    const sendMessage = async (type: string, payload: any, sid?: string) => {
+    const sendMessage = async (type: string, payload: unknown, sid?: string) => {
         const targetSessionId = sid || sessionId;
         try {
             await fetch('/api/signal', {
@@ -343,8 +387,9 @@ export function MatchingSession({ events, accessToken }: Props) {
 
     const sendNote = async (uid: string) => {
         if (!sharedSecret || !noteText) return;
+        const seq = noteSendSeqRef.current++;
         const encrypted = await encryptNote(noteText, sharedSecret);
-        await sendMessage('NOTE', { uid, encrypted });
+        await sendMessage('NOTE', { uid, encrypted, seq } satisfies NotePayload);
 
         // Update local notes
         setNotes((prev: Record<string, string>) => ({ ...prev, [uid]: noteText })); // Show what we sent

@@ -1,0 +1,2 @@
+# gitleaks false positives - verified 2026-10-26 (contract addresses, public test keys, client IDs, placeholders)
+b0f12f6b31b184c764503ba61b21839140b574e0:.env.vercel.pull:jwt:3
